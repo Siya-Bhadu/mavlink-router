@@ -1,5 +1,5 @@
 # Raspberry Pi Connection (SSH)
-There are 3 different ways to SSH into a Pi.
+There are 3 different ways to SSH into a Pi. In order to SSH into a Pi, it must first be connected to your Tailnet. Download the Linux version of Tailscale onto the Pi and any other device that you may need. Once Pi is connected, proceed to the following steps with the Onboarding Computer you are using.
 
 
 ## 1. Through Windows Powershell
@@ -54,15 +54,42 @@ ninja -C build
 sudo ninja -C build install
 ```
 - However, install_mavlink_router.sh is a shell script containing all necessary commands to install the Mavlink-Router repository onto a Raspberry Pi.
+- Grant execution permissions if necessary using:
+```
+chmod +x install_mavlink_router.sh
+```
+Otherwise,
+```
+./install_mavlink_router.sh
+```
+## Mavlink-Router Repo + Raspberry Pi SSH Complete
+- Once in VS Code, SSH'd into Pi and in mavlink-router directory:
+
+1. Plug in your Pixhawk and make sure it is on the correct serial port. 
 
 - Confirming correct serial port (in this case, /dev/ttyACM0):
 ```
 ls /dev/ttyACM*
 ```
-- Viewing config file:
+- You should see the serial port listed once running the ls command.
+
+2. Run mavlink-router
+
+- To run the mavlink router, run in terminal:
+```
+mavlink-routerd -c /etc/mavlink-router/main.conf
+```
+
+- Additionally, to view config file:
 ```
 cat /etc/mavlink-router/main.conf
 ```
+
+3. Open Mission Planner on your Laptop/Onboarding Computer
+- Navigate to the top right corner, set drop down to UDP
+- Port 14550
+- Click Connect
+
 ## Config File 
 - Stored where the mavlink-router looks by default:
 `/etc/mavlink-router/main.conf`
@@ -84,7 +111,7 @@ Address=<LAPTOP_TAILSCALE_IP>
 Port=14550 // Standard mavlink port MP listens on 
 ```
 
-## Running
+## Simplified Running
 - In VS Code terminal, run:
 ```bash
 mavlink-routerd -c /etc/mavlink-router/main.conf
