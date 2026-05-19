@@ -43,7 +43,8 @@ Flight controller telemetry is routed from the Pixhawk to Mission Planner over T
 Flow: Pixhawk --[USB/UART]--> Raspberry Pi [mavlink-router] --[UDP/Tailscale]--> Laptop [Mission Planner]
 
 ## Installation
-
+- Begin by cloning and installing Mavlink-Router repository. 
+- The original commands, if needed, are:
 ```bash
 git clone https://github.com/mavlink-router/mavlink-router.git
 cd mavlink-router
@@ -52,23 +53,35 @@ meson setup build .
 ninja -C build
 sudo ninja -C build install
 ```
+- However, install_mavlink_router.sh is a shell script containing all necessary commands to install the Mavlink-Router repository onto a Raspberry Pi.
 
+- Confirming correct serial port (in this case, /dev/ttyACM0):
+```
+ls /dev/ttyACM*
+```
+- Viewing config file:
+```
+cat /etc/mavlink-router/main.conf
+```
 ## Config File 
+- Stored where the mavlink-router looks by default:
 `/etc/mavlink-router/main.conf`
 
 ```ini
 [General]
-TcpServerPort=0
-MavlinkDialect=ardupilotmega
+TcpServerPort=0 // Disables TCP, Tailscale mainly needs UDP
+MavlinkDialect=ardupilotmega // Makes sense since running ardupilot firmware (MP)
 
+// Ingest the serial port
 [UartEndpoint FC]
-Device=/dev/ttyACM0
-Baud=57600
+Device=/dev/ttyACM0 // The serial port of the Pixhawk (FC)
+Baud=57600 // Default serial speed ArduPilot/Pixhawk uses
 
+// Route it over Tailscale
 [UdpEndpoint Laptop]
 Mode=Normal
 Address=<LAPTOP_TAILSCALE_IP>
-Port=14550
+Port=14550 // Standard mavlink port MP listens on 
 ```
 
 ## Running
@@ -79,4 +92,4 @@ mavlink-routerd -c /etc/mavlink-router/main.conf
 
 Then, in Mission Planner: 
 
-**UDP → port 14550 → Connect**.
+*UDP → port 14550 → Connect*.
