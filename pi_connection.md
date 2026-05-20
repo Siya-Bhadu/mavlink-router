@@ -216,6 +216,5 @@ Every time you want to use this setup:
 | `/dev/ttyACM0` not found | Pixhawk not plugged in, or try `ttyACM1` |
 | Mission Planner won't connect | Check Tailscale is active on both devices |
 | No data in Mission Planner | Check baud rate matches FC setting (`SERIAL1_BAUD`) |
-| Permission denied on serial port | `sudo usermod -aG dialout $USER` then reboot |
 | mavlink-router not found | Re-run install, verify with `mavlink-routerd --version` |
 | Tailscale offline on Pi | SSH via local IP first, then `sudo tailscale up` |
