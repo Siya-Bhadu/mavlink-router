@@ -123,6 +123,24 @@ tailscale ip -4
 | `Address=...` | Your laptop's Tailscale IP —> where to send the data |
 | `Port=14550` | Standard MAVLink UDP port Mission Planner listens on |
 
+- Combined simple view:
+
+```ini
+[General]
+TcpServerPort=0 // Disables TCP, Tailscale mainly needs UDP
+MavlinkDialect=ardupilotmega // Makes sense since running ardupilot firmware (MP)
+
+// Ingest the serial port
+[UartEndpoint FC]
+Device=/dev/ttyACM0 // The serial port of the Pixhawk (FC)
+Baud=57600 // Default serial speed ArduPilot/Pixhawk uses
+
+// Route it over Tailscale
+[UdpEndpoint Laptop]
+Mode=Normal
+Address=<LAPTOP_TAILSCALE_IP>
+Port=14550 // Standard mavlink port MP listens on 
+```
 ---
 
 ## Mavlink-Router Repo + Raspberry Pi SSH Complete
