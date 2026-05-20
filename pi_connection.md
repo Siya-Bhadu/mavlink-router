@@ -169,11 +169,13 @@ If you see a stream of garbled characters, that's raw MAVLink binary data —> t
 ```bash
 mavlink-routerd -c /etc/mavlink-router/main.conf
 ```
-You should see:
+- You should see:
+```
 mavlink-router version v4-16-g2362c62
 Opened UART [4]FC: /dev/ttyACM0
 UART [4]FC: speed = 57600
 Opened UDP Client [5]Laptop: <LAPTOP_TAILSCALE_IP>:14550
+```
 
 To view the config file:
 ```bash
