@@ -1,4 +1,5 @@
 # Raspberry Pi Connection (SSH)
+---
 There are 3 different ways to SSH into a Pi. In order to SSH into a Pi, it must first be connected to your Tailnet. Download the Linux version of Tailscale onto the Pi and any other device that you may need. Once Pi is connected, proceed to the following steps with the Onboarding Computer you are using.
 
 
