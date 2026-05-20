@@ -43,80 +43,159 @@ Flight controller telemetry is routed from the Pixhawk to Mission Planner over T
 Flow: Pixhawk --[USB/UART]--> Raspberry Pi [mavlink-router] --[UDP/Tailscale]--> Laptop [Mission Planner]
 
 ## Installation
-- Begin by cloning and installing Mavlink-Router repository. 
-- The original commands, if needed, are:
+- Begin by cloning this repository onto the Pi:
+```bash
+git clone https://github.com/Siya-Bhadu/mavlink-router.git
+cd mavlink-router
+```
+
+- `install_mavlink_router.sh` is a shell script containing all necessary commands to install mavlink-router onto a Raspberry Pi.
+- Grant execution permissions if necessary using:
+```bash
+chmod +x install_mavlink_router.sh
+```
+Then run:
+```bash
+./install_mavlink_router.sh
+```
+
+- The manual commands, if needed, are:
 ```bash
 git clone https://github.com/mavlink-router/mavlink-router.git
 cd mavlink-router
 git submodule update --init --recursive
-meson setup build .
+meson setup build . -Dsystemdsystemunitdir=/usr/lib/systemd/system
 ninja -C build
 sudo ninja -C build install
 ```
-- However, install_mavlink_router.sh is a shell script containing all necessary commands to install the Mavlink-Router repository onto a Raspberry Pi.
-- Grant execution permissions if necessary using:
-```
-chmod +x install_mavlink_router.sh
-```
-Otherwise,
-```
-./install_mavlink_router.sh
-```
-## Mavlink-Router Repo + Raspberry Pi SSH Complete
-- Once in VS Code, SSH'd into Pi and in mavlink-router directory:
 
-1. Plug in your Pixhawk and make sure it is on the correct serial port. 
-
-- Confirming correct serial port (in this case, /dev/ttyACM0):
+Verify the install worked:
+```bash
+mavlink-routerd --version
 ```
-ls /dev/ttyACM*
-```
-- You should see the serial port listed once running the ls command.
+You should see something like:
+mavlink-router version v4-16-g2362c62
 
-2. Run mavlink-router
+---
 
-- To run the mavlink router, run in terminal:
-```
-mavlink-routerd -c /etc/mavlink-router/main.conf
-```
-
-- Additionally, to view config file:
-```
-cat /etc/mavlink-router/main.conf
-```
-
-3. Open Mission Planner on your Laptop/Onboarding Computer
-- Navigate to the top right corner, set drop down to UDP
-- Port 14550
-- Click Connect
-
-## Config File 
-- Stored where the mavlink-router looks by default:
+## Config File
+The config file tells mavlink-router where to read data from (Pixhawk) and where to send it (your laptop over Tailscale). It is stored where mavlink-router looks by default:
 `/etc/mavlink-router/main.conf`
 
+Create it with:
+```bash
+sudo mkdir -p /etc/mavlink-router
+sudo nano /etc/mavlink-router/main.conf
+```
+
+Paste the following, replacing `<LAPTOP_TAILSCALE_IP>` with your laptop's Tailscale IP:
 ```ini
 [General]
-TcpServerPort=0 // Disables TCP, Tailscale mainly needs UDP
-MavlinkDialect=ardupilotmega // Makes sense since running ardupilot firmware (MP)
+TcpServerPort=0
+MavlinkDialect=ardupilotmega
 
-// Ingest the serial port
+# Ingest the serial port (Pixhawk)
 [UartEndpoint FC]
-Device=/dev/ttyACM0 // The serial port of the Pixhawk (FC)
-Baud=57600 // Default serial speed ArduPilot/Pixhawk uses
+Device=/dev/ttyACM0
+Baud=57600
 
-// Route it over Tailscale
+# Route it out over Tailscale
 [UdpEndpoint Laptop]
 Mode=Normal
 Address=<LAPTOP_TAILSCALE_IP>
-Port=14550 // Standard mavlink port MP listens on 
+Port=14550
+```
+Save with `Ctrl+X` → `Y` → `Enter`.
+
+To find your laptop's Tailscale IP run on your laptop:
+```bash
+tailscale ip -4
 ```
 
-## Simplified Running
-- In VS Code terminal, run:
+### What each value means
+| Value | Meaning |
+|---|---|
+| `TcpServerPort=0` | Disables TCP, Tailscale only needs UDP |
+| `MavlinkDialect=ardupilotmega` | Pixhawk running ArduPilot firmware (Mission Planner) |
+| `Device=/dev/ttyACM0` | The serial port Linux assigns to the Pixhawk over USB |
+| `Baud=57600` | Default serial speed ArduPilot/Pixhawk uses on telemetry port |
+| `Mode=Normal` | Pi pushes packets out to the laptop (client mode) |
+| `Address=...` | Your laptop's Tailscale IP —> where to send the data |
+| `Port=14550` | Standard MAVLink UDP port Mission Planner listens on |
+
+---
+
+## Mavlink-Router Repo + Raspberry Pi SSH Complete
+Once in VS Code, SSH'd into Pi and in the mavlink-router directory:
+
+### 1. Confirm Tailscale is running
+```bash
+tailscale status
+```
+Your laptop should appear in the list. If Tailscale isn't running:
+```bash
+sudo tailscale up
+```
+
+### 2. Plug in your Pixhawk and confirm the correct serial port
+```bash
+ls /dev/ttyACM*
+```
+You should see the serial port listed. Confirm which one is the Pixhawk by checking for data:
+```bash
+sudo cat /dev/ttyACM0
+```
+If you see a stream of garbled characters, that's raw MAVLink binary data —> that's the correct port. If blank, hit `Ctrl+C` and try `ttyACM1`. Update the config file if your port differs from `/dev/ttyACM0`.
+
+### 3. Run mavlink-router
 ```bash
 mavlink-routerd -c /etc/mavlink-router/main.conf
 ```
+You should see:
+mavlink-router version v4-16-g2362c62
+Opened UART [4]FC: /dev/ttyACM0
+UART [4]FC: speed = 57600
+Opened UDP Client [5]Laptop: <LAPTOP_TAILSCALE_IP>:14550
 
-Then, in Mission Planner: 
+To view the config file:
+```bash
+cat /etc/mavlink-router/main.conf
+```
 
-*UDP → port 14550 → Connect*.
+### 4. Open Mission Planner on your Laptop
+- Navigate to the top right corner, set dropdown to **UDP**
+- Port **14550**
+- Click **Connect**
+- Enter **14550** in the Listen Port dialog → click **OK**
+
+You should see the HUD come alive with live telemetry from the Pixhawk.
+
+---
+
+## Restarting the Connection
+Every time you want to use this setup:
+1. SSH into the Pi
+2. Confirm Tailscale is running: `tailscale status`
+3. Confirm Pixhawk is plugged in: `ls /dev/ttyACM*`
+4. Run mavlink-router: `mavlink-routerd -c /etc/mavlink-router/main.conf`
+5. Connect Mission Planner: **UDP → 14550 → Connect**
+
+---
+
+## Shutting Down
+1. Stop mavlink-router: `Ctrl+C`
+2. Shut down the Pi safely: `sudo shutdown now`
+3. Wait for the green LED to stop blinking
+4. Unplug the Pixhawk USB cable
+
+---
+
+## Troubleshooting
+| Problem | Fix |
+|---|---|
+| `/dev/ttyACM0` not found | Pixhawk not plugged in, or try `ttyACM1` |
+| Mission Planner won't connect | Check Tailscale is active on both devices |
+| No data in Mission Planner | Check baud rate matches FC setting (`SERIAL1_BAUD`) |
+| Permission denied on serial port | `sudo usermod -aG dialout $USER` then reboot |
+| mavlink-router not found | Re-run install, verify with `mavlink-routerd --version` |
+| Tailscale offline on Pi | SSH via local IP first, then `sudo tailscale up` |
