@@ -128,7 +128,7 @@ tailscale ip -4
 ```ini
 [General]
 TcpServerPort=0 // Disables TCP, Tailscale mainly needs UDP
-MavlinkDialect=ardupilotmega // Makes sense since running ardupilot firmware (MP)
+MavlinkDialect=ardupilotmega // Makes most sense since running ardupilot firmware (MP)
 
 // Ingest the serial port
 [UartEndpoint FC]
